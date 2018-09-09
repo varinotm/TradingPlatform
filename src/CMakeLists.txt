@@ -1,3 +1,14 @@
+#Macro for variable check
+MACRO(VARIABLE_CHECK VARIABLE VAR_TYPE NOTE)
+   IF (NOT DEFINED ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
+      SET(${VARIABLE} $ENV{${VARIABLE}} CACHE ${VAR_TYPE} ${NOTE} FORCE)
+   ENDIF()
+   IF (NOT DEFINED ${VARIABLE})
+      SET(${VARIABLE} -NOTFOUND CACHE ${VAR_TYPE} ${NOTE} FORCE)
+      MESSAGE(FATAL_ERROR "ERROR: The variable ${VARIABLE} is not set : ${NOTE}")
+   ENDIF()
+ENDMACRO()
+
 # Macro GET_PACKAGE_NAME
 #
 # Find the relative path of a file
@@ -92,6 +103,12 @@ ENDMACRO()
 
 set (C_MAKE_C_FLAGS "-Wall -g")
 
+# IB API
+VARIABLE_CHECK(IB_API_PATH PATH "The local directory to the IB API. Select the corresponding source file "
+                                "(Ex : C:/.../TWS API/source/CppClient)")
+find_library(IB_LIBRARY NAMES TwsSocketClient PATHS ${IB_API_PATH}/lib)
+
+
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
 
 AUTO_ADD_SOURCE_FILE("${CMAKE_CURRENT_SOURCE_DIR}" ALL_EXECUTABLE_FILES_ADDED)
@@ -99,9 +116,21 @@ AUTO_ADD_SOURCE_FILE("${CMAKE_CURRENT_SOURCE_DIR}" ALL_EXECUTABLE_FILES_ADDED)
 # Create the static library   
 ADD_LIBRARY(${PROJECT_NAME}_staticLib STATIC 
             ${ALL_EXECUTABLE_FILES_ADDED})
-            
+
+# forced include fie needed for IB API........
+if(MSVC)
+    add_definitions(/FI"stdafx.h")
+else()
+    # GCC or Clang
+    add_definitions(-include stdafx.h)
+endif()
+
+# QT
 target_compile_definitions(${PROJECT_NAME}_staticLib PRIVATE 
                            $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
-target_link_libraries(${PROJECT_NAME}_staticLib PRIVATE Qt5::Core Qt5::Quick)
+target_link_libraries(${PROJECT_NAME}_staticLib PRIVATE Qt5::Core Qt5::Quick
+                                                        ${IB_LIBRARY})
 
-target_include_directories(${PROJECT_NAME}_staticLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_include_directories(${PROJECT_NAME}_staticLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                                            ${IB_API_PATH}/client)
