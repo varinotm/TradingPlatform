@@ -106,10 +106,11 @@ set (C_MAKE_C_FLAGS "-Wall -g")
 # IB API
 VARIABLE_CHECK(IB_API_PATH PATH "The local directory to the IB API. Select the corresponding source file "
                                 "(Ex : C:/.../TWS API/source/CppClient)")
-find_library(IB_LIBRARY NAMES TwsSocketClient PATHS ${IB_API_PATH}/lib)
+find_library(IB_LIBRARY 1.68 NAMES TwsSocketClient PATHS ${IB_API_PATH}/lib)
 
 
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED )
 
 AUTO_ADD_SOURCE_FILE("${CMAKE_CURRENT_SOURCE_DIR}" ALL_EXECUTABLE_FILES_ADDED)
 
@@ -129,8 +130,10 @@ endif()
 target_compile_definitions(${PROJECT_NAME}_staticLib PRIVATE 
                            $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 target_link_libraries(${PROJECT_NAME}_staticLib PRIVATE Qt5::Core Qt5::Quick
-                                                        ${IB_LIBRARY})
+                                                        ${IB_LIBRARY}
+                                                        ${Boost_LIBRARIES})
 
 
 target_include_directories(${PROJECT_NAME}_staticLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-                                                            ${IB_API_PATH}/client)
+                                                            ${IB_API_PATH}/client
+                                                            ${Boost_INCLUDE_DIR})
