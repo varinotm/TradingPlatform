@@ -3,12 +3,18 @@
 #include "Model/MainModel.h"
 
 #include <QObject>
-
+#include <qqmlapplicationengine.h>
 #include <memory>
 
 
 class MainViewModel : QObject
 {
+   Q_OBJECT
+
+      Q_PROPERTY(bool isConnected
+                 READ isConnected
+                 NOTIFY connectionChanged)
+
 public:
 
    /// Constructor 
@@ -18,6 +24,23 @@ public:
    /// destructor
    ~MainViewModel() = default;
 
+
+   /// QML functions
+
+   /// Connect the client to the API
+   Q_INVOKABLE void connect();
+
+Q_SIGNALS:
+   /// Signal linked to the isConnected property
+   void connectionChanged();
+
 private:
-   std::unique_ptr<MainModel> mModel;
+   /// QML getter for the isConnected property
+   bool isConnected() const;
+
+   /// the main model
+   std::unique_ptr<MainModel> mMainModel;
+
+   /// The qml engine
+   QQmlApplicationEngine mQmlEngine;
 };

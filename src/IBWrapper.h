@@ -3,6 +3,8 @@
 #include "EReaderOSSignal.h"
 #include "EReader.h"
 
+#include <boost/signals2.hpp>
+
 #include <vector>
 #include <string>
 
@@ -16,6 +18,9 @@ public:
    IBWrapper();
    ~IBWrapper();
 
+   /// Signal emitted when the instrument set changed
+   boost::signals2::signal<void()> ConnectionStatusChanged;
+
    bool Connect(const char * host, unsigned int port, int clientId = 0);
    void Disconnect() const;
    bool IsConnected() const;
@@ -24,8 +29,8 @@ public:
 
    virtual void tickPrice(TickerId tickerId,
                           TickType field,
-                          double price,
-                          int canAutoExecute) override;
+                          double price, 
+                          const TickAttrib& attrib) override;
 
    virtual void tickSize(TickerId tickerId, TickType field, int size) override;
 
@@ -50,7 +55,7 @@ public:
    virtual void orderStatus(
       OrderId orderId, const std::string& status, double filled,
       double remaining, double avgFillPrice, int permId, int parentId,
-      double lastFillPrice, int clientId, const std::string& whyHeld) override;
+      double lastFillPrice, int clientId, const std::string& whyHeld, double mktCapPrice) override;
 
    virtual void openOrder(
       OrderId orderId, const Contract&, const Order&, const OrderState&) override;
@@ -89,13 +94,13 @@ public:
    virtual void execDetailsEnd(int reqId) override;
 
    virtual void error(
-      const int id, const int errorCode, const std::string errorString) override;
+      int id, int errorCode, const std::string& errorString) override;
 
    virtual void updateMktDepth(TickerId id, int position, int operation, int side,
                                double price, int size) override;
 
-   virtual void updateMktDepthL2(TickerId id, int position, std::string marketMaker, int operation,
-                                 int side, double price, int size) override;
+   virtual void updateMktDepthL2(TickerId id, int position, const std::string& marketMaker, int operation,
+                                 int side, double price, int siz) override;
 
    virtual void updateNewsBulletin(
       int msgId, int msgType,
@@ -106,9 +111,10 @@ public:
    virtual void receiveFA(faDataType pFaDataType, const std::string& cxml) override;
 
    virtual void historicalData(
-      TickerId reqId, const std::string& date, double open, double high,
-      double low, double close, int volume,
-      int barCount, double WAP, int hasGaps) override;
+      TickerId reqId, const Bar& bar) override;
+
+   virtual void historicalDataEnd(
+      int reqId, const std::string& startDateStr, const std::string& endDateStr) override;
 
    virtual void scannerParameters(const std::string& xml);
 
@@ -125,7 +131,7 @@ public:
 
    virtual void fundamentalData(TickerId reqId, const std::string& data) override;
 
-   virtual void deltaNeutralValidation(int reqId, const UnderComp& underComp) override;
+   virtual void deltaNeutralValidation(int reqId, const DeltaNeutralContract& deltaNeutralContract) override;
 
    virtual void tickSnapshotEnd(int reqId) override;
 
@@ -175,16 +181,37 @@ public:
 
    virtual void accountUpdateMultiEnd(int reqId) override;
 
-   virtual void securityDefinitionOptionalParameter(
-      int reqId, const std::string& exchange,
-      int underlyingConId, const std::string& tradingClass,
-      const std::string& multiplier, std::set<std::string> expirations,
-      std::set<double> strikes) override;
-
+   virtual void securityDefinitionOptionalParameter(int reqId, const std::string& exchange, int underlyingConId, const std::string& tradingClass,
+                                                    const std::string& multiplier, const std::set<std::string>& expirations, const std::set<double>& strikes) override;
    virtual void securityDefinitionOptionalParameterEnd(int reqId) override;
 
    virtual void softDollarTiers(int reqId, const std::vector<SoftDollarTier> &tiers) override;
 
+   virtual void familyCodes(const std::vector<FamilyCode> &familyCodes) override;
+   virtual void symbolSamples(int reqId, const std::vector<ContractDescription> &contractDescriptions) override;
+   virtual void mktDepthExchanges(const std::vector<DepthMktDataDescription> &depthMktDataDescriptions) override;
+   virtual void tickNews(int tickerId, time_t timeStamp, const std::string& providerCode, const std::string& articleId, const std::string& headline, const std::string& extraData) override;
+   virtual void smartComponents(int reqId, const SmartComponentsMap& theMap) override;
+   virtual void tickReqParams(int tickerId, double minTick, const std::string& bboExchange, int snapshotPermissions) override;
+   virtual void newsProviders(const std::vector<NewsProvider> &newsProviders) override;
+   virtual void newsArticle(int requestId, int articleType, const std::string& articleText) override;
+   virtual void historicalNews(int requestId, const std::string& time, const std::string& providerCode, const std::string& articleId, const std::string& headline) override;
+   virtual void historicalNewsEnd(int requestId, bool hasMore) override;
+   virtual void headTimestamp(int reqId, const std::string& headTimestamp) override;
+   typedef std::vector<HistogramEntry> HistogramDataVector;
+   virtual void histogramData(int reqId, const HistogramDataVector& data) override;
+   virtual void historicalDataUpdate(TickerId reqId, const Bar& bar) override;
+   virtual void rerouteMktDataReq(int reqId, int conid, const std::string& exchange) override;
+   virtual void rerouteMktDepthReq(int reqId, int conid, const std::string& exchange) override;
+   virtual void marketRule(int marketRuleId, const std::vector<PriceIncrement> &priceIncrements) override;
+   virtual void pnl(int reqId, double dailyPnL, double unrealizedPnL, double realizedPnL) override;
+   virtual void pnlSingle(int reqId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) override;
+   virtual void historicalTicks(int reqId, const std::vector<HistoricalTick> &ticks, bool done) override;
+   virtual void historicalTicksBidAsk(int reqId, const std::vector<HistoricalTickBidAsk> &ticks, bool done) override;
+   virtual void historicalTicksLast(int reqId, const std::vector<HistoricalTickLast> &ticks, bool done) override;
+   virtual void tickByTickAllLast(int reqId, int tickType, time_t time, double price, int size, const TickAttrib& attribs, const std::string& exchange, const std::string& specialConditions) override;
+   virtual void tickByTickBidAsk(int reqId, time_t time, double bidPrice, double askPrice, int bidSize, int askSize, const TickAttrib& attribs) override;
+   virtual void tickByTickMidPoint(int reqId, time_t time, double midPoint) override;
 
 protected:
    EClientSocket* mClient;
@@ -195,5 +222,8 @@ protected:
    OrderId mOrderId;
    EReader *mReader;
    bool mExtraAuth;
+
+   /// true if connected to the IB api, else false
+   bool mIsConnected;
 
 };

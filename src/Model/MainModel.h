@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/signals2.hpp>
+
 #include <memory>
 
 class IBWrapper;
@@ -12,6 +14,16 @@ public:
 
    /// Destructor
    ~MainModel() = default;
+
+   /// Connect to the ib api client
+   void Connect();
+
+   /// get the connection status
+   /// \return true if connected, else false
+   bool IsConnected() const;
+
+   /// Signal emitted when the instrument set changed
+   boost::signals2::signal<void()> ConnectionStatusChanged;
 
 private:
    std::shared_ptr<IBWrapper> mIBWrapper;

@@ -18,7 +18,8 @@ IBWrapper::IBWrapper() :
    mSleepDeadline(0),
    mOrderId(0),
    mReader(0),
-   mExtraAuth(false)
+   mExtraAuth(false),
+   mIsConnected(false)
 {
 }
 
@@ -48,16 +49,16 @@ bool IBWrapper::Connect(const char *host, unsigned int port, int clientId)
    // Timeout needed to make sure the reader initialization has truly finished...
    Sleep(1000);
 
-   Contract contract;
-   contract.symbol = "IBKR";
-   contract.secType = "STK";
-   contract.currency = "USD";
+   //Contract contract;
+   //contract.symbol = "IBKR";
+   //contract.secType = "STK";
+   //contract.currency = "USD";
    //In the API side, NASDAQ is always defined as ISLAND
-   contract.exchange = "ISLAND";
-   mClient->reqMktData(1004, contract, "233,236,258", false, TagValueListSPtr());
-   
-   Sleep(40);
-   mReader->processMsgs();
+   //contract.exchange = "ISLAND";
+   //mClient->reqMktData(1004, contract, "233,236,258", false, TagValueListSPtr());
+   //mClient->reqNewsProviders();
+   //Sleep(40);
+   //mReader->processMsgs();
    return true;
 }
 
@@ -70,7 +71,7 @@ void IBWrapper::Disconnect() const
 
 bool IBWrapper::IsConnected() const
 {
-   return mClient->isConnected();
+   return mClient->isConnected() && mIsConnected;
 }
 
 void IBWrapper::SetConnectOptions(const std::string& connectOptions)
@@ -81,13 +82,14 @@ void IBWrapper::SetConnectOptions(const std::string& connectOptions)
 void IBWrapper::tickPrice(TickerId tickerId,
                           TickType field,
                           double price,
-                          int canAutoExecute)
+                          const TickAttrib& attrib)
 {
    std::cout << "--- tickPrice Start ---" << std::endl;
    std::cout << "Ticker id : " << tickerId << std::endl;
    std::cout << "Field : " << field << std::endl;
    std::cout << "Price : " << price << std::endl;
-   std::cout << "CanAutoExecute : " << canAutoExecute << std::endl;
+   std::cout << "CanAutoExecute : " << attrib.askPastHigh << std::endl;
+   std::cout << "..." << std::endl;
    std::cout << "--- tickPrice End ---" << std::endl;
 }
 
@@ -136,7 +138,7 @@ void IBWrapper::tickEFP(
 void IBWrapper::orderStatus(
    OrderId orderId, const std::string& status, double filled,
    double remaining, double avgFillPrice, int permId, int parentId,
-   double lastFillPrice, int clientId, const std::string& whyHeld)
+   double lastFillPrice, int clientId, const std::string& whyHeld, double mktCapPrice)
 {
    std::cout << "orderStatus" << std::endl;
 }
@@ -160,6 +162,8 @@ void IBWrapper::winError(const std::string& str, int lastError)
 void IBWrapper::connectionClosed()
 {
    std::cout << "connectionClosed" << std::endl;
+   mIsConnected = false;
+   ConnectionStatusChanged();
 }
 
 void IBWrapper::updateAccountValue(
@@ -219,7 +223,7 @@ void IBWrapper::execDetailsEnd(int reqId)
 }
 
 void IBWrapper::error(
-   const int id, const int errorCode, const std::string errorString)
+   int id, int errorCode, const std::string& errorString)
 {
    std::cout << "error : " << errorString << std::endl;
 }
@@ -230,8 +234,8 @@ void IBWrapper::updateMktDepth(TickerId id, int position, int operation, int sid
    std::cout << "updateMktDepth" << std::endl;
 }
 
-void IBWrapper::updateMktDepthL2(TickerId id, int position, std::string marketMaker, int operation,
-                                 int side, double price, int size)
+void IBWrapper::updateMktDepthL2(TickerId id, int position, const std::string& marketMaker, int operation,
+                                 int side, double price, int siz)
 {
    std::cout << "updateMktDepthL2" << std::endl;
 }
@@ -254,23 +258,25 @@ void IBWrapper::receiveFA(faDataType pFaDataType, const std::string& cxml)
 }
 
 void IBWrapper::historicalData(
-   TickerId reqId, const std::string& date, double open, double high,
-   double low, double close, int volume,
-   int barCount, double WAP, int hasGaps)
+   TickerId reqId, const Bar& bar)
 {
 
    std::cout << " --- historicalData Start --- " << std::endl;
    std::cout << "Request id : " << reqId << std::endl;
-   std::cout << "Date : " << date << std::endl;
-   std::cout << "Open : " << open << std::endl;
-   std::cout << "High : " << high << std::endl;
-   std::cout << "Low : " << low << std::endl;
-   std::cout << "Close : " << close << std::endl;
-   std::cout << "Volume : " << volume << std::endl;
-   std::cout << "Bar count : " << barCount << std::endl;
-   std::cout << "WAP : " << WAP << std::endl;
-   std::cout << "hasGaps : " << hasGaps << std::endl;
+   std::cout << "Close : " << bar.close << std::endl;
+   std::cout << "Count : " << bar.count << std::endl;
+   std::cout << "High : " << bar.high << std::endl;
+   std::cout << "Low : " << bar.low << std::endl;
+   std::cout << "Open : " << bar.open << std::endl;
+   std::cout << "Volume : " << bar.volume << std::endl;
+   std::cout << "Wap : " << bar.wap << std::endl;
    std::cout << " --- historicalData End --- " << std::endl;
+}
+
+void IBWrapper::historicalDataEnd(
+   int reqId, const std::string& startDateStr, const std::string& endDateStr) 
+{
+
 }
 
 void IBWrapper::scannerParameters(const std::string& xml)
@@ -308,7 +314,7 @@ void IBWrapper::fundamentalData(TickerId reqId, const std::string& data)
    std::cout << "fundamentalData" << std::endl;
 }
 
-void IBWrapper::deltaNeutralValidation(int reqId, const UnderComp& underComp)
+void IBWrapper::deltaNeutralValidation(int reqId, const DeltaNeutralContract& deltaNeutralContract)
 {
    std::cout << "deltaNeutralValidation" << std::endl;
 }
@@ -389,6 +395,8 @@ void IBWrapper::verifyAndAuthCompleted(
 void IBWrapper::connectAck()
 {
    std::cout << "connectAck" << std::endl;
+   mIsConnected = true;
+   ConnectionStatusChanged();
 }
 
 void IBWrapper::positionMulti(
@@ -418,10 +426,8 @@ void IBWrapper::accountUpdateMultiEnd(int reqId)
 }
 
 void IBWrapper::securityDefinitionOptionalParameter(
-   int reqId, const std::string& exchange,
-   int underlyingConId, const std::string& tradingClass,
-   const std::string& multiplier, std::set<std::string> expirations,
-   std::set<double> strikes)
+   int reqId, const std::string& exchange, int underlyingConId, const std::string& tradingClass,
+   const std::string& multiplier, const std::set<std::string>& expirations, const std::set<double>& strikes)
 {
    std::cout << "securityDefinitionOptionalParameter" << std::endl;
 }
@@ -435,4 +441,102 @@ void IBWrapper::softDollarTiers(
    int reqId, const std::vector<SoftDollarTier> &tiers)
 {
    std::cout << "softDollarTiers" << std::endl;
+}
+
+void IBWrapper::familyCodes(const std::vector<FamilyCode> &familyCodes) 
+{
+   std::cout << "familyCodes" << std::endl;
+}
+
+void IBWrapper::symbolSamples(int reqId, const std::vector<ContractDescription> &contractDescriptions)
+{
+   std::cout << "symbolSamples" << std::endl;
+}
+void IBWrapper::mktDepthExchanges(const std::vector<DepthMktDataDescription> &depthMktDataDescriptions)
+{
+   std::cout << "mktDepthExchanges" << std::endl;
+}
+void IBWrapper::tickNews(int tickerId, time_t timeStamp, const std::string& providerCode, const std::string& articleId, const std::string& headline, const std::string& extraData)
+{
+   std::cout << "tickNews" << std::endl;
+}
+void IBWrapper::smartComponents(int reqId, const SmartComponentsMap& theMap)
+{
+   std::cout << "smartComponents" << std::endl;
+}
+void IBWrapper::tickReqParams(int tickerId, double minTick, const std::string& bboExchange, int snapshotPermissions)
+{
+   std::cout << "tickReqParams" << std::endl;
+}
+void IBWrapper::newsProviders(const std::vector<NewsProvider> &newsProviders)
+{
+   std::cout << "newsProviders" << std::endl;
+}
+void IBWrapper::newsArticle(int requestId, int articleType, const std::string& articleText)
+{
+   std::cout << "newsArticle" << std::endl;
+}
+void IBWrapper::historicalNews(int requestId, const std::string& time, const std::string& providerCode, const std::string& articleId, const std::string& headline)
+{
+   std::cout << "historicalNews" << std::endl;
+}
+void IBWrapper::historicalNewsEnd(int requestId, bool hasMore)
+{
+   std::cout << "historicalNewsEnd" << std::endl;
+}
+void IBWrapper::headTimestamp(int reqId, const std::string& headTimestamp)
+{
+   std::cout << "headTimestamp" << std::endl;
+}
+void IBWrapper::histogramData(int reqId, const HistogramDataVector& data)
+{
+   std::cout << "histogramData" << std::endl;
+}
+void IBWrapper::historicalDataUpdate(TickerId reqId, const Bar& bar)
+{
+   std::cout << "historicalDataUpdate" << std::endl;
+}
+void IBWrapper::rerouteMktDataReq(int reqId, int conid, const std::string& exchange)
+{
+   std::cout << "rerouteMktDataReq" << std::endl;
+}
+void IBWrapper::rerouteMktDepthReq(int reqId, int conid, const std::string& exchange)
+{
+   std::cout << "rerouteMktDepthReq" << std::endl;
+}
+void IBWrapper::marketRule(int marketRuleId, const std::vector<PriceIncrement> &priceIncrements)
+{
+   std::cout << "marketRule" << std::endl;
+}
+void IBWrapper::pnl(int reqId, double dailyPnL, double unrealizedPnL, double realizedPnL)
+{
+   std::cout << "pnl" << std::endl;
+}
+void IBWrapper::pnlSingle(int reqId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value)
+{
+   std::cout << "pnlSingle" << std::endl;
+}
+void IBWrapper::historicalTicks(int reqId, const std::vector<HistoricalTick> &ticks, bool done)
+{
+   std::cout << "historicalTicks" << std::endl;
+}
+void IBWrapper::historicalTicksBidAsk(int reqId, const std::vector<HistoricalTickBidAsk> &ticks, bool done)
+{
+   std::cout << "historicalTicksBidAsk" << std::endl;
+}
+void IBWrapper::historicalTicksLast(int reqId, const std::vector<HistoricalTickLast> &ticks, bool done)
+{
+   std::cout << "historicalTicksLast" << std::endl;
+}
+void IBWrapper::tickByTickAllLast(int reqId, int tickType, time_t time, double price, int size, const TickAttrib& attribs, const std::string& exchange, const std::string& specialConditions)
+{
+   std::cout << "tickByTickAllLast" << std::endl;
+}
+void IBWrapper::tickByTickBidAsk(int reqId, time_t time, double bidPrice, double askPrice, int bidSize, int askSize, const TickAttrib& attribs)
+{
+   std::cout << "tickByTickBidAsk" << std::endl;
+}
+void IBWrapper::tickByTickMidPoint(int reqId, time_t time, double midPoint)
+{
+   std::cout << "tickByTickMidPoint" << std::endl;
 }
