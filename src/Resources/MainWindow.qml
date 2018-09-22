@@ -1,9 +1,9 @@
 import QtQuick 2.11
 import QtQuick.Window 2.11
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
-Window 
+ApplicationWindow 
 {
    id : applicationWindow
    visible: true
@@ -11,12 +11,50 @@ Window
    height: 800
    title: qsTr("Trading Platform Template")
 
+   menuBar:MenuBar
+   {
+      Menu 
+      {
+         title: qsTr("&File")
+         MenuItem { 
+            text: qsTr("&Quit") 
+            onTriggered: mainViewModel.quit();
+         }
+      }
+      Menu
+      {
+         title: qsTr("&View")
+         Menu 
+         {
+            title: qsTr("&New") 
+            MenuItem
+            {
+               text : "Live Market Data"
+               onTriggered: {console.log("LIVE");}
+            }
+         }
+      }
+      Menu {
+         title: qsTr("&Help")
+         MenuItem 
+         { 
+            text: qsTr("&About")
+            onTriggered: {aboutWindow.open()}
+         }
+      }
+   }
+
    ToolBar
    {
       id: mainToolbar
+      
+      
       RowLayout 
       {
          id : toolBarRowLayout
+
+         
+
          Rectangle
          {
             id: connectionStatus
@@ -35,10 +73,15 @@ Window
          {
             id : disconnectButton
             text : "Disconnect"
-            anchors.right : parent.right
             enabled: mainViewModel.isConnected
             onClicked: { mainViewModel.disconnect(); }
          }
       }
-   }  
+   }
+   
+   AboutWindow
+   {
+      id : aboutWindow
+      visible : false
+   }
 }

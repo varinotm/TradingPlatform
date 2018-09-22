@@ -27,6 +27,9 @@ public:
 
    /// QML functions
 
+   /// Quit the application
+   Q_INVOKABLE void quit();
+
    /// Connect the client to the API
    Q_INVOKABLE void connect();
 

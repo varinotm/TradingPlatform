@@ -1,5 +1,7 @@
 <RCC>
-    <qresource prefix="/">
-        <file>main.qml</file>
-    </qresource>
+   <qresource prefix="/">
+      <file>Resources/AboutWindow.qml</file>
+      <file>Resources/MainWindow.qml</file>
+      <file>Resources/Images/Todo.png</file>
+   </qresource>
 </RCC>

@@ -1,8 +1,7 @@
 #include "MainViewModel.h"
 
-#include "qqmlcontext.h"
-
-//#include <boost/signals2.hpp>
+#include <qqmlcontext.h>
+#include <qcoreapplication.h>
 
 #include <iostream>
 
@@ -11,7 +10,7 @@ MainViewModel::MainViewModel(QObject* parent) :
 {
    mMainModel = std::make_unique<MainModel>();
 
-   mQmlEngine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+   mQmlEngine.load(QUrl(QStringLiteral("qrc:/Resources/MainWindow.qml")));
 
    QQmlContext* viewContextRoot = mQmlEngine.rootContext();
    viewContextRoot->setContextProperty("mainViewModel", this);
@@ -26,6 +25,11 @@ MainViewModel::MainViewModel(QObject* parent) :
 void MainViewModel::connect()
 {
    mMainModel->Connect();
+}
+
+void MainViewModel::quit()
+{
+   QCoreApplication::quit();
 }
 
 void MainViewModel::disconnect()
