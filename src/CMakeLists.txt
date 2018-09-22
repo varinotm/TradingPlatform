@@ -108,9 +108,9 @@ VARIABLE_CHECK(IB_API_PATH PATH "The local directory to the IB API. Select the c
                                 "(Ex : C:/.../TWS API/source/CppClient)")
 find_library(IB_LIBRARY 1.68 NAMES TwsSocketClient PATHS ${IB_API_PATH}/lib)
 
-
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
-FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED )
+find_package(Boost REQUIRED COMPONENTS system thread regex)
 
 AUTO_ADD_SOURCE_FILE("${CMAKE_CURRENT_SOURCE_DIR}" ALL_EXECUTABLE_FILES_ADDED)
 

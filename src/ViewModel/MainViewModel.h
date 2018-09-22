@@ -30,6 +30,9 @@ public:
    /// Connect the client to the API
    Q_INVOKABLE void connect();
 
+   /// Disconnect the client from the API
+   Q_INVOKABLE void disconnect();
+
 Q_SIGNALS:
    /// Signal linked to the isConnected property
    void connectionChanged();

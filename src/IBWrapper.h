@@ -4,6 +4,7 @@
 #include "EReader.h"
 
 #include <boost/signals2.hpp>
+#include <boost/asio.hpp> 
 
 #include <vector>
 #include <string>
@@ -21,12 +22,16 @@ public:
    /// Signal emitted when the instrument set changed
    boost::signals2::signal<void()> ConnectionStatusChanged;
 
+   /// Periodically check if the reader has any messages to be processed
+   void IBWrapper::CheckMessages(const boost::system::error_code& /*e*/);
+
+   /// function to call from moodels
    bool Connect(const char * host, unsigned int port, int clientId = 0);
    void Disconnect() const;
    bool IsConnected() const;
    void SetConnectOptions(const std::string&);
-   void bulletins();
 
+   /// Overriden function from IB parent
    virtual void tickPrice(TickerId tickerId,
                           TickType field,
                           double price, 
@@ -223,7 +228,8 @@ protected:
    EReader *mReader;
    bool mExtraAuth;
 
-   /// true if connected to the IB api, else false
-   bool mIsConnected;
-
+   /// Timer to handle all ib thread events
+   std::unique_ptr <std::thread> mTimerThread;
+   boost::asio::io_service mIOService;
+   std::unique_ptr<boost::asio::deadline_timer> mEventTimer;
 };

@@ -18,6 +18,9 @@ public:
    /// Connect to the ib api client
    void Connect();
 
+   /// Disconnect from the ib api client
+   void Disconnect();
+
    /// get the connection status
    /// \return true if connected, else false
    bool IsConnected() const;

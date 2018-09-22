@@ -10,6 +10,7 @@
 namespace
 {
    const int PING_DEADLINE = 2; // seconds
+   const boost::posix_time::milliseconds TIMER_INTERVAL(250);
 }
 
 IBWrapper::IBWrapper() :
@@ -17,10 +18,14 @@ IBWrapper::IBWrapper() :
    mClient(new EClientSocket(this, &mOsSignal)),
    mSleepDeadline(0),
    mOrderId(0),
-   mReader(0),
-   mExtraAuth(false),
-   mIsConnected(false)
+   mReader(nullptr),
+   mExtraAuth(false)
 {
+   mTimerThread = std::make_unique<std::thread>([this]{
+      mEventTimer = std::make_unique<boost::asio::deadline_timer>(mIOService, TIMER_INTERVAL);
+      mEventTimer->async_wait([this](const boost::system::error_code &ec) {this->CheckMessages(ec); });
+      mIOService.run(); });
+   
 }
 
 IBWrapper::~IBWrapper()
@@ -31,13 +36,27 @@ IBWrapper::~IBWrapper()
    delete mClient;
 }
 
+void IBWrapper::CheckMessages(const boost::system::error_code& /*e*/)
+{
+   if (mReader != nullptr)
+   {
+      std::cout << "tick" << std::endl;
+      mReader->processMsgs();
+   }
+   
+
+   // Reschedule the timer for 1 second in the future:
+   mEventTimer->expires_at(mEventTimer->expires_at() + TIMER_INTERVAL);
+   // Posts the timer event
+   mEventTimer->async_wait([this](const boost::system::error_code &ec) {this->CheckMessages(ec); });
+}
+
 bool IBWrapper::Connect(const char *host, unsigned int port, int clientId)
 {
    // trying to connect
    printf("Connecting to %s:%d clientId:%d\n", !(host && *host) ? "127.0.0.1" : host, port, clientId);
 
    bool bRes = mClient->eConnect(host, port, clientId, mExtraAuth);
-   std::cout << bRes << std::endl;
    printf("Connected to %s:%d clientId:%d\n", mClient->host().c_str(), mClient->port(), clientId);
 
    // Timeout needed to make sure the client connection has truly finished...
@@ -59,7 +78,7 @@ bool IBWrapper::Connect(const char *host, unsigned int port, int clientId)
    //mClient->reqNewsProviders();
    //Sleep(40);
    //mReader->processMsgs();
-   return true;
+   return bRes;
 }
 
 void IBWrapper::Disconnect() const
@@ -67,11 +86,12 @@ void IBWrapper::Disconnect() const
    mClient->eDisconnect();
 
    printf("Disconnected\n");
+   ConnectionStatusChanged();
 }
 
 bool IBWrapper::IsConnected() const
 {
-   return mClient->isConnected() && mIsConnected;
+   return mClient->isConnected();
 }
 
 void IBWrapper::SetConnectOptions(const std::string& connectOptions)
@@ -162,7 +182,6 @@ void IBWrapper::winError(const std::string& str, int lastError)
 void IBWrapper::connectionClosed()
 {
    std::cout << "connectionClosed" << std::endl;
-   mIsConnected = false;
    ConnectionStatusChanged();
 }
 
@@ -276,7 +295,7 @@ void IBWrapper::historicalData(
 void IBWrapper::historicalDataEnd(
    int reqId, const std::string& startDateStr, const std::string& endDateStr) 
 {
-
+   std::cout << " historicalDataEnd  " << std::endl;
 }
 
 void IBWrapper::scannerParameters(const std::string& xml)
@@ -395,7 +414,6 @@ void IBWrapper::verifyAndAuthCompleted(
 void IBWrapper::connectAck()
 {
    std::cout << "connectAck" << std::endl;
-   mIsConnected = true;
    ConnectionStatusChanged();
 }
 

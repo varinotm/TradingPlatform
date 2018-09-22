@@ -7,8 +7,8 @@ Window
 {
    id : applicationWindow
    visible: true
-   width: 640
-   height: 480
+   width: 1000
+   height: 800
    title: qsTr("Trading Platform Template")
 
    ToolBar
@@ -27,8 +27,17 @@ Window
          Button 
          {
             id : connectButton
-            anchors.right : applicationWindow.right
+            text : "Connect"
+            enabled: !mainViewModel.isConnected
             onClicked: { mainViewModel.connect(); }
+         }
+         Button 
+         {
+            id : disconnectButton
+            text : "Disconnect"
+            anchors.right : parent.right
+            enabled: mainViewModel.isConnected
+            onClicked: { mainViewModel.disconnect(); }
          }
       }
    }  

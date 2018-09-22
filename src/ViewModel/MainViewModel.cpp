@@ -28,6 +28,11 @@ void MainViewModel::connect()
    mMainModel->Connect();
 }
 
+void MainViewModel::disconnect()
+{
+   mMainModel->Disconnect();
+}
+
 bool MainViewModel::isConnected() const
 {
    return mMainModel->IsConnected();

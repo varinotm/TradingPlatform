@@ -20,6 +20,11 @@ void MainModel::Connect()
    mIBWrapper->Connect("127.0.0.1", 4002, 1);
 }
 
+void MainModel::Disconnect()
+{
+   mIBWrapper->Disconnect();
+}
+
 bool MainModel::IsConnected() const
 {
    return mIBWrapper->IsConnected();
