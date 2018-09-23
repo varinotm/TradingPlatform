@@ -5,6 +5,7 @@
 #include <memory>
 
 class IBWrapper;
+class ContractRepository;
 
 class MainModel
 {
@@ -30,4 +31,5 @@ public:
 
 private:
    std::shared_ptr<IBWrapper> mIBWrapper;
+   std::shared_ptr<ContractRepository> mContractRepository;
 };

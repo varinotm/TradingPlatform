@@ -1,12 +1,14 @@
 #include "MainModel.h"
 
 #include "IBWrapper.h"
+#include "Data\ContractRepository.h"
 
 #include <boost\shared_ptr.hpp>
 
 MainModel::MainModel()
 {
    mIBWrapper = std::make_shared<IBWrapper>();
+   mContractRepository = std::make_shared<ContractRepository>();
 
    // Connections
    mIBWrapper->ConnectionStatusChanged.connect([this]

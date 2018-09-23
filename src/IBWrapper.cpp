@@ -40,7 +40,6 @@ void IBWrapper::CheckMessages(const boost::system::error_code& /*e*/)
 {
    if (mReader != nullptr)
    {
-      std::cout << "tick" << std::endl;
       mReader->processMsgs();
    }
    
@@ -59,25 +58,18 @@ bool IBWrapper::Connect(const char *host, unsigned int port, int clientId)
    bool bRes = mClient->eConnect(host, port, clientId, mExtraAuth);
    printf("Connected to %s:%d clientId:%d\n", mClient->host().c_str(), mClient->port(), clientId);
 
-   // Timeout needed to make sure the client connection has truly finished...
-   Sleep(1000);
-
    mReader = new EReader(mClient, &mOsSignal);
 
    mReader->start();
-   // Timeout needed to make sure the reader initialization has truly finished...
-   Sleep(1000);
 
-   //Contract contract;
+   Contract contract;
    //contract.symbol = "IBKR";
    //contract.secType = "STK";
    //contract.currency = "USD";
    //In the API side, NASDAQ is always defined as ISLAND
    //contract.exchange = "ISLAND";
    //mClient->reqMktData(1004, contract, "233,236,258", false, TagValueListSPtr());
-   //mClient->reqNewsProviders();
-   //Sleep(40);
-   //mReader->processMsgs();
+
    return bRes;
 }
 

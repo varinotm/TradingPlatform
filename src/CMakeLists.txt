@@ -54,15 +54,17 @@ MACRO (FIND_GROUP_TYPE FILE_RELATIVE_PATH GROUP_TYPE)
    ELSEIF(${FILE_EXTENSION} STREQUAL ".qml" OR
           ${FILE_EXTENSION} STREQUAL ".qmlproject")
       SET(GROUP_TYPE "Qt Files")
+   # Data File
+   ELSEIF(${FILE_EXTENSION} STREQUAL ".json" OR          
+          ${FILE_EXTENSION} STREQUAL ".xml")
+      SET(GROUP_TYPE "Data Files")
    # Resource File
    ELSEIF(${FILE_EXTENSION} STREQUAL ".ico" OR          
           ${FILE_EXTENSION} STREQUAL ".gif" OR
           ${FILE_EXTENSION} STREQUAL ".bmp" OR
           ${FILE_EXTENSION} STREQUAL ".png" OR
-          ${FILE_EXTENSION} STREQUAL ".jpg" OR          
-          ${FILE_EXTENSION} STREQUAL ".json" OR
+          ${FILE_EXTENSION} STREQUAL ".jpg" OR
           ${FILE_EXTENSION} STREQUAL ".conf" OR
-          ${FILE_EXTENSION} STREQUAL ".xml" OR 
           ${FILE_EXTENSION} STREQUAL ".csv" OR
           ${FILE_EXTENSION} STREQUAL ".idx1-ubyte" OR
           ${FILE_EXTENSION} STREQUAL ".idx3-ubyte" OR
@@ -97,6 +99,12 @@ MACRO (AUTO_ADD_SOURCE_FILE FOLDER_PATH FILELIST_VAR)
             SOURCE_GROUP("${GROUP_NAME}" FILES ${FILE_ABSOLUTE_PATH})
          ENDIF()
          LIST(APPEND ${FILELIST_VAR} "${FILE_ABSOLUTE_PATH}")
+
+         # Copy wanted resource file into binary file
+         IF (${GROUP_TYPE} STREQUAL "Data Files")
+            file(COPY ${FILE_ABSOLUTE_PATH}
+                  DESTINATION ${CMAKE_BINARY_DIR}/exe)
+         ENDIF()
       ENDIF()
    ENDFOREACH()
 ENDMACRO()
@@ -110,7 +118,7 @@ find_library(IB_LIBRARY 1.68 NAMES TwsSocketClient PATHS ${IB_API_PATH}/lib)
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system thread regex)
+find_package(Boost REQUIRED COMPONENTS system thread regex filesystem)
 
 AUTO_ADD_SOURCE_FILE("${CMAKE_CURRENT_SOURCE_DIR}" ALL_EXECUTABLE_FILES_ADDED)
 

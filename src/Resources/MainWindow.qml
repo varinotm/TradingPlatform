@@ -30,7 +30,13 @@ ApplicationWindow
             MenuItem
             {
                text : "Live Market Data"
-               onTriggered: {console.log("LIVE");}
+               onTriggered: 
+               { 
+                  var component;
+                  var sprite;
+                  component = Qt.createComponent("LiveMarketDataWindow.qml");
+                  sprite = component.createObject(applicationWindow);
+               }
             }
          }
       }
